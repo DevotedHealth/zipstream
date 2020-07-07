@@ -18,6 +18,11 @@ func TestReader(t *testing.T) {
 }
 
 func testReader(t *testing.T, s []byte) {
+	testReaderNonce(t, s, "")
+	testReaderNonce(t, s, "nonce")
+}
+
+func testReaderNonce(t *testing.T, s []byte, nonce string) {
 
 	var wbuf bytes.Buffer
 	for j := 0; j < 2; j++ {
@@ -36,8 +41,9 @@ func testReader(t *testing.T, s []byte) {
 			t.Fatal(err)
 		}
 	}
-
-	zr := NewReader(&wbuf)
+	var nonceBuf bytes.Buffer
+	nonceBuf.WriteString(nonce)
+	zr := NewReader(io.MultiReader(&nonceBuf, &wbuf))
 	for j := 0; j < 2; j++ {
 		fcount := 0
 		for {

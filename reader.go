@@ -45,18 +45,22 @@ func (r *Reader) Next() (*zip.FileHeader, error) {
 			return nil, err
 		}
 	}
-	sigBytes, err := r.br.Peek(4)
-	if err != nil {
-		return nil, err
-	}
+LOOP:
+	for true {
+		sigBytes, err := r.br.Peek(4)
+		if err != nil {
+			return nil, err
+		}
 
-	switch sig := binary.LittleEndian.Uint32(sigBytes); sig {
-	case fileHeaderSignature:
-		break
-	case directoryHeaderSignature: // Directory appears at end of file so we are finished
-		return nil, discardCentralDirectory(r.br)
-	default:
-		return nil, zip.ErrFormat
+		switch sig := binary.LittleEndian.Uint32(sigBytes); sig {
+		case fileHeaderSignature:
+			break LOOP
+		case directoryHeaderSignature: // Directory appears at end of file so we are finished
+			return nil, discardCentralDirectory(r.br)
+		default:
+			// Advance the reader to componesate for non-zip related stuff
+			r.br.Discard(1)
+		}
 	}
 
 	headBuf := make([]byte, fileHeaderLen)
